@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ultra Chat Messenger - Realtime Multi-Server</title>
+  <title>Ultra Chat Messenger - Realtime Facebook Login</title>
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <!-- Google Font - Inter & Plus Jakarta Sans -->
+  <!-- Google Font - Plus Jakarta Sans -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -21,16 +21,11 @@
         extend: {
           fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] },
           colors: {
-            brand: {
-              50: '#eef2ff',
-              500: '#6366f1',
-              600: '#4f46e5',
-              700: '#4338ca',
+            facebook: {
+              DEFAULT: '#1877F2',
+              hover: '#166FE5',
+              dark: '#0e52ab'
             }
-          },
-          animation: {
-            'bounce-short': 'bounce 0.6s ease-in-out 1',
-            'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
           }
         }
       }
@@ -38,865 +33,657 @@
   </script>
 
   <style>
-    /* Custom scrollbar */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
-    ::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.4); border-radius: 9999px; }
-    ::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.8); }
+    ::-webkit-scrollbar-thumb { background: rgba(24, 119, 242, 0.4); border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(24, 119, 242, 0.8); }
     
     .glass-panel {
-      background: rgba(30, 41, 59, 0.75);
-      backdrop-filter: blur(16px);
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(20px);
       border: 1px solid rgba(255, 255, 255, 0.08);
     }
 
-    .glass-card {
-      background: rgba(15, 23, 42, 0.6);
-      backdrop-filter: blur(8px);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
     .chat-bubble-me {
-      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.25);
+      background: linear-gradient(135deg, #1877F2 0%, #0052cc 100%);
+      box-shadow: 0 4px 15px rgba(24, 119, 242, 0.3);
     }
 
     .chat-bubble-other {
       background: #1e293b;
       border: 1px solid rgba(255, 255, 255, 0.08);
     }
-
-    @keyframes popIn {
-      0% { transform: scale(0.9); opacity: 0; }
-      100% { transform: scale(1); opacity: 1; }
-    }
-
-    .animate-pop-in {
-      animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-    }
   </style>
 </head>
-<body class="h-full font-sans antialiased flex flex-col overflow-hidden bg-slate-950 text-slate-100 selection:bg-indigo-500 selection:text-white">
+<body class="h-full font-sans antialiased flex flex-col overflow-hidden bg-slate-950 text-slate-100 selection:bg-blue-600 selection:text-white">
 
   <div id="app" class="flex h-screen w-screen overflow-hidden">
 
     <!-- 1. LEFTMOST SERVER SELECTOR BAR -->
-    <aside class="w-18 md:w-20 bg-slate-900 flex flex-col items-center py-4 space-y-4 border-r border-slate-800/80 z-20 flex-shrink-0">
+    <aside class="w-16 md:w-20 bg-slate-900 flex flex-col items-center py-4 space-y-4 border-r border-slate-800/80 z-20 flex-shrink-0">
       
       <!-- App Brand Logo -->
       <div class="flex flex-col items-center space-y-1 group relative cursor-pointer" id="btn-brand-home">
-        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30 group-hover:scale-105 transition duration-300">
-          <i class="fa-solid fa-bolt text-xl animate-bounce-short"></i>
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/30 group-hover:scale-105 transition duration-300">
+          <i class="fa-brands fa-facebook-messenger text-2xl"></i>
         </div>
-        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ultra</span>
+        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">FB Chat</span>
       </div>
 
       <div class="w-10 h-[1px] bg-slate-800/80 my-1"></div>
 
       <!-- SERVERS LIST (Server #1 -> Server #5) -->
       <div id="server-list" class="flex-1 w-full flex flex-col items-center space-y-3 overflow-y-auto px-2">
-        <!-- Dynamic Server Buttons Rendered via JS -->
+        <!-- Rendered via JS -->
       </div>
 
-      <!-- SOUND TOGGLE & USER PROFILE -->
+      <!-- CONTROLS & USER PROFILE BUTTONS -->
       <div class="mt-auto flex flex-col items-center space-y-3 pt-3 border-t border-slate-800/80 w-full">
-        <!-- Sound Effect Toggle -->
-        <button id="btn-toggle-sound" title="Âm thanh thông báo" class="w-10 h-10 rounded-xl bg-slate-800 text-indigo-400 hover:bg-slate-700 hover:text-indigo-300 transition flex items-center justify-center relative">
+        
+        <!-- FIREBASE KEY CONFIG BUTTON 🔑 -->
+        <button id="btn-open-config" title="Cấu hình Firebase" class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 hover:bg-amber-500 hover:text-slate-950 transition flex items-center justify-center relative group">
+          <i class="fa-solid fa-key text-sm"></i>
+          <div class="absolute left-full ml-3 px-3 py-1.5 bg-slate-900 text-amber-300 text-xs font-semibold rounded-xl opacity-0 group-hover:opacity-100 transition duration-150 pointer-events-none whitespace-nowrap z-30 shadow-2xl border border-amber-500/30">
+            Cấu hình Firebase Key 🔑
+          </div>
+        </button>
+
+        <!-- Sound Toggle -->
+        <button id="btn-toggle-sound" title="Bật/Tắt Âm thanh" class="w-10 h-10 rounded-xl bg-slate-800 text-blue-400 hover:bg-slate-700 hover:text-blue-300 transition flex items-center justify-center">
           <i id="sound-icon" class="fa-solid fa-volume-high text-sm"></i>
         </button>
 
-        <!-- User Avatar & Profile Switch -->
-        <button id="btn-user-profile" title="Hồ sơ tài khoản" class="w-10 h-10 rounded-2xl bg-slate-800 overflow-hidden border-2 border-indigo-500/50 hover:border-indigo-400 focus:outline-none transition relative group">
-          <img id="user-avatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=Guest" alt="Avatar" class="w-full h-full object-cover">
-          <span id="user-online-dot" class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-slate-900 rounded-full"></span>
-        </button>
+        <!-- Facebook User Avatar / Sign Out -->
+        <div class="relative group flex items-center justify-center">
+          <button id="btn-user-profile" class="w-10 h-10 rounded-2xl bg-slate-800 overflow-hidden border-2 border-facebook/60 hover:border-facebook focus:outline-none transition relative flex items-center justify-center">
+            <img id="user-avatar-btn" src="https://api.dicebear.com/7.x/bottts/svg?seed=FBUser" alt="FB Avatar" class="w-full h-full object-cover">
+            <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-slate-900 rounded-full"></span>
+          </button>
+          
+          <div class="absolute left-full ml-3 px-3 py-2 bg-slate-900 text-white text-xs font-semibold rounded-xl opacity-0 group-hover:opacity-100 transition duration-150 pointer-events-none whitespace-nowrap z-30 shadow-2xl border border-slate-800 flex flex-col gap-1">
+            <span id="tooltip-user-name" class="font-bold text-blue-400">Chưa đăng nhập</span>
+            <span class="text-[10px] text-slate-400">Tài khoản Facebook</span>
+          </div>
+        </div>
 
-        <!-- Logout / Switch Account -->
-        <button id="btn-logout" title="Đăng xuất / Tải lại" class="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white transition flex items-center justify-center">
+        <!-- Logout Button -->
+        <button id="btn-logout" title="Đăng xuất Facebook" class="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white transition flex items-center justify-center">
           <i class="fa-solid fa-right-from-bracket text-sm"></i>
         </button>
       </div>
     </aside>
 
-    <!-- 2. SERVER CHANNEL & USER LIST SIDEBAR -->
-    <aside id="channel-sidebar" class="w-64 bg-slate-900/80 border-r border-slate-800/80 hidden md:flex flex-col z-10 flex-shrink-0 backdrop-blur-md">
+    <!-- 2. MAIN CHAT CONTAINER -->
+    <main class="flex-1 flex flex-col h-full bg-slate-950 relative overflow-hidden">
       
-      <!-- Current Server Banner -->
-      <div class="p-4 border-b border-slate-800/80 flex items-center justify-between bg-slate-900/50">
-        <div>
-          <h2 id="current-server-title" class="font-bold text-slate-100 flex items-center gap-2 text-base">
-            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            Server #1
-          </h2>
-          <p id="current-server-capacity" class="text-xs text-slate-400 mt-0.5 flex items-center gap-1">
-            <i class="fa-solid fa-signal text-[10px] text-emerald-400"></i>
-            <span>Đã kết nối Realtime</span>
-          </p>
-        </div>
-      </div>
-
-      <!-- Online Active Users List -->
-      <div class="flex-1 overflow-y-auto p-3 space-y-4">
-        <div>
-          <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-2 mb-2 flex justify-between items-center">
-            <span>Thành viên đang Online</span>
-            <span id="online-count-badge" class="bg-indigo-500/20 text-indigo-300 font-semibold text-[10px] px-2 py-0.5 rounded-full border border-indigo-500/30">0</span>
-          </div>
-          <div id="online-users-list" class="space-y-1">
-            <!-- Dynamic Active Users List -->
-          </div>
-        </div>
-      </div>
-
-      <!-- Notice Banner -->
-      <div class="p-3 m-3 bg-gradient-to-r from-indigo-950/60 to-purple-950/60 border border-indigo-500/20 rounded-2xl text-xs text-indigo-200 shadow-inner">
-        <div class="flex items-center gap-2 mb-1 text-indigo-300 font-semibold">
-          <i class="fa-solid fa-sparkles text-amber-400"></i>
-          <span>Nhắn Tin Trực Tiếp</span>
-        </div>
-        <p class="text-[11px] opacity-80 leading-relaxed">Mọi tin nhắn gửi đi đều đồng bộ tức thì cho tất cả người dùng đang truy cập trang web!</p>
-      </div>
-    </aside>
-
-    <!-- 3. MAIN CHAT AREA -->
-    <main class="flex-1 flex flex-col h-full bg-slate-950 relative">
-      
-      <!-- Top Chat Header -->
-      <header class="h-16 border-b border-slate-800/80 bg-slate-900/40 px-4 flex items-center justify-between backdrop-blur-md z-10">
+      <!-- CHAT HEADER -->
+      <header class="h-16 border-b border-slate-800/80 px-4 md:px-6 flex items-center justify-between bg-slate-900/80 backdrop-blur-md z-10">
         <div class="flex items-center gap-3">
-          <button id="btn-toggle-sidebar" class="md:hidden text-slate-400 hover:text-slate-200 p-2 rounded-lg bg-slate-800/60">
-            <i class="fa-solid fa-bars text-base"></i>
-          </button>
           <div>
-            <h1 id="chat-header-title" class="font-bold text-slate-100 flex items-center gap-2 text-base">
-              Server #1
-            </h1>
-            <p id="chat-header-subtitle" class="text-xs text-emerald-400 flex items-center gap-1.5">
-              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-              Kênh chat trực tuyến mở (Public Chatroom)
-            </p>
+            <div class="flex items-center gap-2">
+              <h1 id="chat-header-title" class="font-bold text-base text-white">Server #1</h1>
+              <!-- Status Badge -->
+              <span id="connection-status-badge" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center gap-1.5 cursor-pointer">
+                <span id="status-ping-dot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                <span id="status-text">Đang kết nối Firebase...</span>
+              </span>
+            </div>
+            <p id="current-server-desc" class="text-xs text-slate-400">Kênh trò chuyện Facebook Realtime trực tiếp</p>
           </div>
         </div>
 
+        <!-- Right Header User Badge -->
         <div class="flex items-center gap-3">
-          <!-- Active User Badge -->
-          <div class="bg-slate-900/90 text-xs px-3.5 py-1.5 rounded-xl border border-slate-800 text-slate-200 flex items-center gap-2 shadow-sm">
-            <span class="w-2 h-2 rounded-full bg-indigo-400"></span>
-            <span id="user-display-name" class="font-semibold max-w-[120px] truncate">Người dùng</span>
+          <div class="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700/50">
+            <i class="fa-brands fa-facebook text-facebook text-base"></i>
+            <span id="current-username-display" class="text-xs font-bold text-slate-200">Đang chờ Facebook...</span>
           </div>
         </div>
       </header>
 
-      <!-- Chat Messages Scroll Container -->
+      <!-- ERROR ALERT BANNER -->
+      <div id="error-alert-banner" class="hidden bg-rose-500/10 border-b border-rose-500/30 px-4 py-2 text-rose-300 text-xs flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-triangle-exclamation text-rose-400 text-sm"></i>
+          <span id="error-alert-text">Chưa kết nối được Firebase Realtime. Vui lòng kiểm tra lại Key hoặc cài đặt.</span>
+        </div>
+        <button id="btn-fix-firebase-help" class="underline font-bold hover:text-white">Xem cách sửa 🔑</button>
+      </div>
+
+      <!-- MESSAGES DISPLAY AREA -->
       <div id="messages-container" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
-        <!-- Messages will be rendered dynamically -->
-        <div id="chat-loading-state" class="flex flex-col items-center justify-center h-full text-slate-500 text-sm space-y-3">
-          <div class="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-          <p>Đang kết nối Realtime Database...</p>
+        <div class="flex flex-col items-center justify-center h-full text-slate-500 text-xs space-y-2">
+          <i class="fa-solid fa-spinner animate-spin text-2xl text-facebook"></i>
+          <p class="font-semibold text-slate-400">Đang tải tin nhắn Realtime...</p>
         </div>
       </div>
 
-      <!-- Quick Emoji Bar -->
-      <div id="quick-emoji-bar" class="px-4 py-2 bg-slate-900/70 border-t border-slate-800/50 flex items-center gap-2 overflow-x-auto text-lg backdrop-blur-md">
-        <span class="text-xs text-slate-400 font-medium whitespace-nowrap mr-1"><i class="fa-solid fa-face-smile text-amber-400 mr-1"></i>Nhanh:</span>
-        <button class="emoji-btn hover:scale-125 transition duration-150 p-1">👍</button>
-        <button class="emoji-btn hover:scale-125 transition duration-150 p-1">❤️</button>
-        <button class="emoji-btn hover:scale-125 transition duration-150 p-1">😂</button>
-        <button class="emoji-btn hover:scale-125 transition duration-150 p-1">🔥</button>
-        <button class="emoji-btn hover:scale-125 transition duration-150 p-1">🎉</button>
-        <button class="emoji-btn hover:scale-125 transition duration-150 p-1">🚀</button>
-        <button class="emoji-btn hover:scale-125 transition duration-150 p-1">💩</button>
-        <button class="emoji-btn hover:scale-125 transition duration-150 p-1">🤩</button>
-        <button class="emoji-btn hover:scale-125 transition duration-150 p-1">👋</button>
-      </div>
+      <!-- EMOJI QUICK STRIP & CHAT INPUT FORM -->
+      <div class="p-3 md:p-4 bg-slate-900/90 border-t border-slate-800/80 backdrop-blur-lg">
+        
+        <!-- Fast Emoji Reaction Strip -->
+        <div class="flex items-center gap-1.5 mb-2.5 overflow-x-auto pb-1 text-sm">
+          <span class="text-[10px] font-bold text-slate-500 uppercase mr-1 flex-shrink-0">Thả cảm xúc:</span>
+          <button class="emoji-quick-btn px-2.5 py-1 bg-slate-800/80 hover:bg-slate-700 rounded-lg transition hover:scale-110">👍</button>
+          <button class="emoji-quick-btn px-2.5 py-1 bg-slate-800/80 hover:bg-slate-700 rounded-lg transition hover:scale-110">❤️</button>
+          <button class="emoji-quick-btn px-2.5 py-1 bg-slate-800/80 hover:bg-slate-700 rounded-lg transition hover:scale-110">😂</button>
+          <button class="emoji-quick-btn px-2.5 py-1 bg-slate-800/80 hover:bg-slate-700 rounded-lg transition hover:scale-110">🔥</button>
+          <button class="emoji-quick-btn px-2.5 py-1 bg-slate-800/80 hover:bg-slate-700 rounded-lg transition hover:scale-110">🎉</button>
+          <button class="emoji-quick-btn px-2.5 py-1 bg-slate-800/80 hover:bg-slate-700 rounded-lg transition hover:scale-110">🚀</button>
+        </div>
 
-      <!-- Chat Input Box -->
-      <footer class="p-3 md:p-4 border-t border-slate-800/80 bg-slate-900/60 backdrop-blur-md">
-        <form id="chat-form" class="flex items-center gap-2 max-w-5xl mx-auto">
-          <div class="relative flex-1">
-            <input 
-              type="text" 
-              id="message-input" 
-              placeholder="Nhập tin nhắn vui nhộn của bạn..." 
-              class="w-full bg-slate-950/90 border border-slate-800 rounded-2xl px-4 py-3 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-sm transition"
-              required
-              autocomplete="off"
-            >
-          </div>
+        <!-- Chat Form -->
+        <form id="chat-form" class="flex items-center gap-2">
+          <input 
+            type="text" 
+            id="message-input" 
+            placeholder="Nhập tin nhắn bằng tài khoản Facebook của bạn..." 
+            autocomplete="off"
+            class="flex-1 bg-slate-950 border border-slate-800 focus:border-facebook focus:ring-1 focus:ring-facebook text-white rounded-2xl px-4 py-3 text-sm focus:outline-none transition placeholder-slate-500"
+          >
           <button 
             type="submit" 
-            class="bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-semibold px-6 py-3 rounded-2xl transition duration-200 flex items-center gap-2 text-sm shadow-lg shadow-indigo-600/30 flex-shrink-0"
+            class="bg-facebook hover:bg-facebook-hover text-white font-bold px-6 py-3 rounded-2xl shadow-lg shadow-blue-500/25 transition active:scale-95 flex items-center justify-center gap-2 flex-shrink-0"
           >
-            <span>Gửi</span>
+            <span class="hidden sm:inline">Gửi</span>
             <i class="fa-solid fa-paper-plane text-xs"></i>
           </button>
         </form>
-      </footer>
-    </main>
+      </div>
 
+    </main>
   </div>
 
-  <!-- 4. AUTHENTICATION / QUICK GUEST MODAL -->
-  <div id="auth-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-xl z-50 flex items-center justify-center p-4">
-    <div class="glass-panel w-full max-w-md rounded-3xl p-6 md:p-8 shadow-2xl relative border border-slate-700/60 animate-pop-in">
+  <!-- 3. EXCLUSIVE FACEBOOK LOGIN MODAL (NO OTHER LOGIN ALLOWED) -->
+  <div id="modal-login" class="fixed inset-0 bg-slate-950/95 backdrop-blur-xl z-50 flex items-center justify-center p-4">
+    <div class="glass-panel w-full max-w-md rounded-3xl p-6 md:p-8 shadow-2xl border border-slate-700/60 flex flex-col space-y-6">
       
-      <!-- App Header -->
-      <div class="text-center mb-6">
-        <div class="w-16 h-16 bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 rounded-2xl mx-auto flex items-center justify-center text-white text-3xl shadow-xl shadow-indigo-500/30 mb-3">
-          <i class="fa-solid fa-comments"></i>
+      <!-- Brand Header -->
+      <div class="text-center space-y-3">
+        <div class="w-20 h-20 rounded-3xl bg-facebook mx-auto flex items-center justify-center text-white text-4xl shadow-xl shadow-blue-500/30">
+          <i class="fa-brands fa-facebook-f"></i>
         </div>
-        <h2 class="text-2xl font-extrabold text-white tracking-tight">Vào Chat Ngay!</h2>
-        <p class="text-slate-400 text-xs mt-1">Kết nối nhắn tin Realtime miễn phí 100%</p>
+        <div class="space-y-1">
+          <h2 class="text-2xl font-black text-white tracking-tight">Đăng Nhập Messenger</h2>
+          <p class="text-xs text-slate-400 font-medium">Hệ thống áp dụng duy nhất hình thức Đăng Nhập bằng Facebook</p>
+        </div>
       </div>
 
-      <!-- Auth Tabs -->
-      <div class="flex border-b border-slate-800 mb-6 bg-slate-900/60 p-1 rounded-xl">
-        <button id="tab-guest-btn" class="flex-1 py-2 text-xs font-bold rounded-lg text-indigo-400 bg-slate-800 shadow">Vào Nhanh (Khách)</button>
-        <button id="tab-login-btn" class="flex-1 py-2 text-xs font-bold rounded-lg text-slate-400 hover:text-slate-200">Đăng Nhập</button>
-        <button id="tab-register-btn" class="flex-1 py-2 text-xs font-bold rounded-lg text-slate-400 hover:text-slate-200">Đăng Ký</button>
+      <!-- Facebook Login Button Container -->
+      <div class="space-y-4 pt-2">
+        <button 
+          id="btn-facebook-login" 
+          type="button" 
+          class="w-full bg-facebook hover:bg-facebook-hover text-white font-bold py-4 px-6 rounded-2xl shadow-xl shadow-blue-600/30 transition duration-200 active:scale-95 flex items-center justify-center gap-3 text-base group"
+        >
+          <i class="fa-brands fa-facebook-square text-2xl group-hover:scale-110 transition duration-200"></i>
+          <span>Đăng Nhập Bằng Facebook</span>
+        </button>
+
+        <div id="login-loading-indicator" class="hidden flex items-center justify-center gap-2 text-xs font-semibold text-blue-400 py-2">
+          <i class="fa-solid fa-circle-notch animate-spin text-sm"></i>
+          <span>Đang kết nối Facebook & Firebase Realtime...</span>
+        </div>
+
+        <div id="login-error-message" class="hidden p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs text-center font-medium">
+          <!-- Error details rendered dynamically -->
+        </div>
       </div>
 
-      <!-- 1. FAST GUEST FORM (Default & Fast) -->
-      <form id="guest-form" class="space-y-4">
-        <div>
-          <label class="block text-xs font-medium text-slate-300 mb-1.5">Tên biệt danh của bạn:</label>
-          <div class="relative">
-            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500">
-              <i class="fa-solid fa-user-astronaut"></i>
-            </span>
-            <input type="text" id="guest-name" class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500" placeholder="Ví dụ: Chatster_99" required>
-          </div>
+      <!-- Informational Card -->
+      <div class="bg-slate-900/80 rounded-2xl p-4 border border-slate-800 text-[11px] text-slate-400 space-y-2">
+        <div class="flex items-center gap-2 font-bold text-slate-300">
+          <i class="fa-solid fa-shield-halved text-emerald-400"></i>
+          <span>Bảo mật & Realtime tức thì</span>
         </div>
-
-        <!-- Avatar Presets -->
-        <div>
-          <label class="block text-xs font-medium text-slate-300 mb-1.5">Chọn Avatar vui nhộn:</label>
-          <div id="avatar-presets" class="flex items-center justify-between gap-2 p-1 bg-slate-950/80 border border-slate-800 rounded-xl">
-            <!-- Dynamic Avatar Presets -->
-          </div>
-        </div>
-
-        <button type="submit" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-3 rounded-xl text-sm transition shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2">
-          <span>Bắt Đầu Nhắn Tin Ngay</span>
-          <i class="fa-solid fa-arrow-right text-xs"></i>
-        </button>
-      </form>
-
-      <!-- 2. LOGIN FORM -->
-      <form id="login-form" class="space-y-4 hidden">
-        <div>
-          <label class="block text-xs font-medium text-slate-300 mb-1">Email</label>
-          <input type="email" id="login-email" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500" placeholder="yourname@gmail.com">
-        </div>
-        <div>
-          <label class="block text-xs font-medium text-slate-300 mb-1">Mật khẩu</label>
-          <input type="password" id="login-password" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500" placeholder="••••••••">
-        </div>
-        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-xl text-sm transition shadow-lg shadow-indigo-600/30">
-          Đăng Nhập Tài Khoản
-        </button>
-      </form>
-
-      <!-- 3. REGISTER FORM -->
-      <form id="register-form" class="space-y-4 hidden">
-        <div>
-          <label class="block text-xs font-medium text-slate-300 mb-1">Tên hiển thị</label>
-          <input type="text" id="reg-name" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500" placeholder="Nguyễn Văn A">
-        </div>
-        <div>
-          <label class="block text-xs font-medium text-slate-300 mb-1">Email</label>
-          <input type="email" id="reg-email" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500" placeholder="yourname@gmail.com">
-        </div>
-        <div>
-          <label class="block text-xs font-medium text-slate-300 mb-1">Mật khẩu</label>
-          <input type="password" id="reg-password" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500" placeholder="Tối thiểu 6 ký tự">
-        </div>
-        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-xl text-sm transition shadow-lg shadow-emerald-600/30">
-          Tạo Tài Khoản Mới
-        </button>
-      </form>
-
-      <!-- Divider -->
-      <div class="relative my-5">
-        <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-800"></div></div>
-        <div class="relative flex justify-center text-[10px] uppercase tracking-wider"><span class="bg-slate-900 px-3 text-slate-500 font-bold">Hoặc</span></div>
+        <p class="leading-relaxed">
+          Tên hiển thị và Ảnh đại diện của bạn sẽ được đồng bộ tự động từ tài khoản Facebook khi gửi tin nhắn vào phòng chat Realtime.
+        </p>
       </div>
 
-      <!-- FACEBOOK LOGIN BUTTON -->
-      <button id="btn-facebook-login" class="w-full bg-[#1877F2] hover:bg-[#166fe5] text-white font-semibold py-2.5 rounded-xl text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20">
-        <i class="fa-brands fa-facebook-f text-base"></i>
-        <span>Đăng nhập với Facebook</span>
-      </button>
-
-      <p class="text-[10px] text-slate-500 text-center mt-4 flex items-center justify-center gap-1">
-        <i class="fa-solid fa-shield-halved text-emerald-500"></i>
-        <span>Hệ thống bảo mật trực tiếp qua Google Firebase Auth</span>
-      </p>
     </div>
   </div>
 
-  <!-- TOAST NOTIFICATION CONTAINER -->
-  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+  <!-- 4. FIREBASE CONFIG MODAL 🔑 -->
+  <div id="modal-config" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="glass-panel w-full max-w-lg rounded-3xl p-6 md:p-8 shadow-2xl border border-slate-700/50 space-y-5">
+      
+      <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
+            <i class="fa-solid fa-key"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-base text-white">Cấu Hình Firebase Realtime Key</h3>
+            <p class="text-xs text-slate-400">Dán `firebaseConfig` riêng để lưu tin nhắn trực tiếp</p>
+          </div>
+        </div>
+        <button id="btn-close-config" class="text-slate-400 hover:text-white p-2">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
 
-  <!-- Firebase v11 Module Script -->
+      <div class="space-y-3">
+        <label class="text-xs font-bold text-slate-300 uppercase">Dán đoạn JSON `firebaseConfig` từ Firebase Console:</label>
+        <textarea 
+          id="input-firebase-config" 
+          rows="6" 
+          placeholder='{\n  "apiKey": "AIzaSy...",\n  "authDomain": "your-project.firebaseapp.com",\n  "projectId": "your-project"\n}'
+          class="w-full font-mono text-xs bg-slate-950 border border-slate-800 focus:border-amber-500 text-amber-300 rounded-xl p-3 focus:outline-none"
+        ></textarea>
+        <p class="text-[11px] text-slate-400">
+          💡 Hãy đảm bảo bạn đã bật **Facebook Sign-In Provider** trong trang *Firebase Console -> Authentication -> Sign-in method*.
+        </p>
+      </div>
+
+      <div class="flex items-center justify-end gap-3 pt-2">
+        <button id="btn-reset-config" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold transition">
+          Dùng Key Mặc Định
+        </button>
+        <button id="btn-save-config" class="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs transition shadow-lg shadow-amber-500/20">
+          Lưu Key & Kết Nối
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 5. JAVASCRIPT APP ENGINE & FIREBASE INTEGRATION -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { 
       getAuth, 
-      signInAnonymously,
-      signInWithEmailAndPassword, 
-      createUserWithEmailAndPassword, 
-      signInWithPopup, 
       FacebookAuthProvider, 
-      signOut, 
+      signInWithPopup, 
+      signInWithRedirect, 
+      getRedirectResult, 
       onAuthStateChanged, 
-      updateProfile 
+      signOut,
+      signInAnonymously,
+      signInWithCustomToken
     } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { 
-      getDatabase, 
-      ref, 
-      push, 
-      set, 
-      onValue, 
-      off, 
-      onDisconnect, 
-      serverTimestamp, 
-      goOffline, 
-      goOnline 
-    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
+      getFirestore, 
+      collection, 
+      addDoc, 
+      onSnapshot 
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    /* ========================================================================
-       1. FIREBASE PROJECT CONFIGURATION
-       ======================================================================== */
-    const firebaseConfig = typeof __firebase_config !== 'undefined' 
-      ? JSON.parse(__firebase_config) 
-      : {
-          apiKey: "AIzaSyDC70Llo5pUsOkmDyx1mzpnlLTXyRqSkII",
-          authDomain: "chatgdvn.firebaseapp.com",
-          databaseURL: "https://chatgdvn-default-rtdb.firebaseio.com",
-          projectId: "chatgdvn",
-          storageBucket: "chatgdvn.firebasestorage.app",
-          messagingSenderId: "59954267016",
-          appId: "1:59954267016:web:65ff7de0342188f5bdf03d"
-        };
+    // Application ID
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'ultra-chat-app-v1';
 
-    // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getDatabase(app);
+    // Default Firebase Config if custom is not supplied
+    const defaultFirebaseConfig = {
+      apiKey: "AIzaSyDemoUltraMessengerApiKey2026",
+      authDomain: "ultra-messenger-app.firebaseapp.com",
+      projectId: "ultra-messenger-app",
+      storageBucket: "ultra-messenger-app.appspot.com",
+      messagingSenderId: "987654321012",
+      appId: "1:987654321012:web:1234567890abcdef"
+    };
 
-    // 5 Clean Public Servers
-    const SERVERS = [
-      { id: 1, name: "Server #1", key: "server_1" },
-      { id: 2, name: "Server #2", key: "server_2" },
-      { id: 3, name: "Server #3", key: "server_3" },
-      { id: 4, name: "Server #4", key: "server_4" },
-      { id: 5, name: "Server #5", key: "server_5" }
-    ];
-
-    // Global App States
-    let currentUser = null;
-    let currentServerIndex = 0;
-    let selectedAvatarUrl = "https://api.dicebear.com/7.x/bottts/svg?seed=Rocket";
-    let soundEnabled = true;
-    let messagesListenerRef = null;
-    let presenceListenerRef = null;
-
-    /* ========================================================================
-       2. WEB AUDIO API SOUND EFFECTS
-       ======================================================================== */
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    
-    function playPopSound(isIncoming = false) {
-      if (!soundEnabled) return;
+    // Active configuration resolve
+    let activeConfig = defaultFirebaseConfig;
+    const savedCustomConfig = localStorage.getItem('ultra_custom_firebase_config');
+    if (savedCustomConfig) {
       try {
-        if (audioCtx.state === 'suspended') audioCtx.resume();
+        activeConfig = JSON.parse(savedCustomConfig);
+      } catch (e) {
+        console.warn('Invalid custom config JSON, using default');
+      }
+    } else if (typeof __firebase_config !== 'undefined') {
+      try {
+        activeConfig = JSON.parse(__firebase_config);
+      } catch(e) {}
+    }
+
+    // App Global State
+    const state = {
+      currentUser: null,
+      currentServer: 'Server #1',
+      soundEnabled: true,
+      unsubscribeListener: null,
+      firebaseConnected: false,
+      messages: []
+    };
+
+    let app, db, auth;
+    const facebookProvider = new FacebookAuthProvider();
+    facebookProvider.addScope('public_profile');
+
+    function playNotificationSound(type = 'receive') {
+      if (!state.soundEnabled) return;
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
-        
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(isIncoming ? 587.33 : 880, audioCtx.currentTime); // D5 or A5
-        osc.frequency.exponentialRampToValueAtTime(isIncoming ? 880 : 1320, audioCtx.currentTime + 0.1);
-        
-        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-        
         osc.connect(gain);
         gain.connect(audioCtx.destination);
-        
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.1);
+
+        if (type === 'send') {
+          osc.frequency.setValueAtTime(520, audioCtx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(1040, audioCtx.currentTime + 0.1);
+          gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.1);
+        } else {
+          osc.frequency.setValueAtTime(659.25, audioCtx.currentTime);
+          osc.frequency.setValueAtTime(987.77, audioCtx.currentTime + 0.08);
+          gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.2);
+        }
       } catch (e) {
-        // Audio playback error fallback
+        console.debug('Audio playback suppressed', e);
       }
     }
 
-    // Toggle Sound Button
-    document.getElementById('btn-toggle-sound').addEventListener('click', () => {
-      soundEnabled = !soundEnabled;
-      const icon = document.getElementById('sound-icon');
-      if (soundEnabled) {
-        icon.className = "fa-solid fa-volume-high text-sm";
-        showToast("Đã BẬT âm thanh thông báo", "info");
-      } else {
-        icon.className = "fa-solid fa-volume-xmark text-sm opacity-50";
-        showToast("Đã TẮT âm thanh thông báo", "info");
-      }
-    });
-
-    /* ========================================================================
-       3. HELPER UTILITIES & UI TOAST
-       ======================================================================== */
-    function showToast(message, type = 'info') {
-      const container = document.getElementById('toast-container');
-      const toast = document.createElement('div');
-      
-      const bgColors = {
-        success: 'bg-emerald-600',
-        error: 'bg-rose-600',
-        info: 'bg-indigo-600'
-      };
-
-      toast.className = `${bgColors[type] || 'bg-indigo-600'} text-white px-4 py-3 rounded-2xl shadow-2xl text-xs font-semibold flex items-center gap-2 transform transition duration-300 ease-out pointer-events-auto border border-white/10`;
-      toast.innerHTML = `
-        <i class="fa-solid ${type === 'success' ? 'fa-circle-check' : type === 'error' ? 'fa-triangle-exclamation' : 'fa-circle-info'} text-sm"></i>
-        <span>${message}</span>
-      `;
-      
-      container.appendChild(toast);
-      setTimeout(() => {
-        toast.style.opacity = '0';
-        setTimeout(() => toast.remove(), 300);
-      }, 3000);
-    }
-
-    /* ========================================================================
-       4. AVATAR PRESETS GENERATOR
-       ======================================================================== */
-    const seeds = ['Rocket', 'Bot', 'Star', 'Panda', 'Cyber'];
-    const avatarContainer = document.getElementById('avatar-presets');
+    const serverList = document.getElementById('server-list');
+    const servers = ['Server #1', 'Server #2', 'Server #3', 'Server #4', 'Server #5'];
     
-    seeds.forEach((seed, i) => {
-      const url = `https://api.dicebear.com/7.x/bottts/svg?seed=${seed}`;
-      const img = document.createElement('img');
-      img.src = url;
-      img.className = `w-10 h-10 rounded-xl p-1 cursor-pointer border-2 transition ${i === 0 ? 'border-indigo-500 bg-indigo-500/20 scale-105' : 'border-transparent hover:bg-slate-800'}`;
-      
-      img.onclick = () => {
-        document.querySelectorAll('#avatar-presets img').forEach(el => {
-          el.className = 'w-10 h-10 rounded-xl p-1 cursor-pointer border-2 border-transparent hover:bg-slate-800';
-        });
-        img.className = 'w-10 h-10 rounded-xl p-1 cursor-pointer border-2 border-indigo-500 bg-indigo-500/20 scale-105';
-        selectedAvatarUrl = url;
-      };
-
-      avatarContainer.appendChild(img);
-    });
-
-    /* ========================================================================
-       5. AUTHENTICATION (FAST GUEST / EMAIL / FACEBOOK)
-       ======================================================================== */
-    
-    // Tab Switching
-    const tabGuestBtn = document.getElementById('tab-guest-btn');
-    const tabLoginBtn = document.getElementById('tab-login-btn');
-    const tabRegBtn = document.getElementById('tab-register-btn');
-
-    const guestForm = document.getElementById('guest-form');
-    const loginForm = document.getElementById('login-form');
-    const regForm = document.getElementById('register-form');
-
-    function resetAuthTabs() {
-      [tabGuestBtn, tabLoginBtn, tabRegBtn].forEach(b => b.className = "flex-1 py-2 text-xs font-bold rounded-lg text-slate-400 hover:text-slate-200");
-      [guestForm, loginForm, regForm].forEach(f => f.classList.add('hidden'));
-    }
-
-    tabGuestBtn.onclick = () => {
-      resetAuthTabs();
-      tabGuestBtn.className = "flex-1 py-2 text-xs font-bold rounded-lg text-indigo-400 bg-slate-800 shadow";
-      guestForm.classList.remove('hidden');
-    };
-
-    tabLoginBtn.onclick = () => {
-      resetAuthTabs();
-      tabLoginBtn.className = "flex-1 py-2 text-xs font-bold rounded-lg text-indigo-400 bg-slate-800 shadow";
-      loginForm.classList.remove('hidden');
-    };
-
-    tabRegBtn.onclick = () => {
-      resetAuthTabs();
-      tabRegBtn.className = "flex-1 py-2 text-xs font-bold rounded-lg text-indigo-400 bg-slate-800 shadow";
-      regForm.classList.remove('hidden');
-    };
-
-    // Fast Guest Submission
-    guestForm.onsubmit = async (e) => {
-      e.preventDefault();
-      const name = document.getElementById('guest-name').value.trim();
-      if (!name) return;
-
-      try {
-        const userCred = await signInAnonymously(auth);
-        await updateProfile(userCred.user, {
-          displayName: name,
-          photoURL: selectedAvatarUrl
-        });
-        showToast(`Xin chào ${name}! Đã kết nối vào Chat.`, 'success');
-      } catch (err) {
-        showToast("Lỗi kết nối: " + err.message, "error");
-      }
-    };
-
-    // Email Login
-    loginForm.onsubmit = async (e) => {
-      e.preventDefault();
-      const email = document.getElementById('login-email').value;
-      const pass = document.getElementById('login-password').value;
-
-      try {
-        await signInWithEmailAndPassword(auth, email, pass);
-        showToast("Đăng nhập thành công!", "success");
-      } catch (err) {
-        showToast("Lỗi đăng nhập: " + err.message, "error");
-      }
-    };
-
-    // Registration
-    regForm.onsubmit = async (e) => {
-      e.preventDefault();
-      const name = document.getElementById('reg-name').value;
-      const email = document.getElementById('reg-email').value;
-      const pass = document.getElementById('reg-password').value;
-
-      try {
-        const userCred = await createUserWithEmailAndPassword(auth, email, pass);
-        await updateProfile(userCred.user, {
-          displayName: name,
-          photoURL: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(name)}`
-        });
-        showToast("Đăng ký thành công!", "success");
-      } catch (err) {
-        showToast("Lỗi đăng ký: " + err.message, "error");
-      }
-    };
-
-    // Facebook Login
-    document.getElementById('btn-facebook-login').onclick = async () => {
-      try {
-        const provider = new FacebookAuthProvider();
-        const result = await signInWithPopup(auth, provider);
-        showToast(`Xin chào ${result.user.displayName}`, "success");
-      } catch (err) {
-        showToast("Lỗi Facebook Auth: " + err.message, "error");
-      }
-    };
-
-    // Logout
-    document.getElementById('btn-logout').onclick = async () => {
-      try {
-        await signOut(auth);
-        showToast("Đã đăng xuất", "info");
-        setTimeout(() => location.reload(), 500);
-      } catch (err) {
-        showToast("Không thể đăng xuất", "error");
-      }
-    };
-
-    // Observe Auth State
-    onAuthStateChanged(auth, (user) => {
-      const authModal = document.getElementById('auth-modal');
-      if (user) {
-        currentUser = user;
-        authModal.classList.add('hidden');
-        
-        const displayName = user.displayName || user.email || 'Khách Vô Danh';
-        const photoURL = user.photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${user.uid}`;
-
-        document.getElementById('user-display-name').innerText = displayName;
-        document.getElementById('user-avatar').src = photoURL;
-        
-        // Connect to active server room
-        connectToServerRoom(currentServerIndex);
-      } else {
-        currentUser = null;
-        authModal.classList.remove('hidden');
-      }
-    });
-
-    /* ========================================================================
-       6. MULTI-SERVER REALTIME SYNC ENGINE
-       ======================================================================== */
-
-    // Render Server Selector Bar
-    function renderServerListUI() {
-      const listEl = document.getElementById('server-list');
-      listEl.innerHTML = '';
-
-      SERVERS.forEach((srv, idx) => {
-        const isSelected = idx === currentServerIndex;
+    function renderServerButtons() {
+      serverList.innerHTML = '';
+      servers.forEach((srv) => {
+        const isActive = state.currentServer === srv;
         const btn = document.createElement('button');
-        
-        btn.className = `w-12 h-12 rounded-2xl flex flex-col items-center justify-center font-bold text-xs transition duration-200 relative group ${
-          isSelected 
-            ? 'bg-gradient-to-tr from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-600/40 ring-2 ring-indigo-400 scale-105' 
-            : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
+        btn.className = `w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-xs transition duration-200 relative group ${
+          isActive 
+            ? 'bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30 ring-2 ring-blue-400' 
+            : 'bg-slate-800/80 text-slate-400 hover:bg-slate-700 hover:text-white'
         }`;
-
+        
+        const shortNum = srv.replace('Server #', '#');
         btn.innerHTML = `
-          <span>S${srv.id}</span>
-          <span class="text-[8px] font-normal opacity-80 uppercase">Server</span>
-          
-          <!-- Tooltip Hover -->
-          <div class="absolute left-full ml-3 px-3 py-1.5 bg-slate-900 text-white text-xs font-semibold rounded-xl opacity-0 group-hover:opacity-100 transition duration-150 pointer-events-none whitespace-nowrap z-30 shadow-2xl border border-slate-700/80">
-            ${srv.name}
+          <span>${shortNum}</span>
+          <div class="absolute left-full ml-3 px-3 py-1.5 bg-slate-900 text-white text-xs font-semibold rounded-xl opacity-0 group-hover:opacity-100 transition duration-150 pointer-events-none whitespace-nowrap z-30 shadow-xl border border-slate-800">
+            Kênh ${srv}
           </div>
         `;
 
-        btn.onclick = () => switchServer(idx);
-        listEl.appendChild(btn);
+        btn.onclick = () => {
+          if (state.currentServer !== srv) {
+            state.currentServer = srv;
+            document.getElementById('chat-header-title').innerText = srv;
+            renderServerButtons();
+            subscribeToMessages();
+          }
+        };
+        serverList.appendChild(btn);
       });
     }
 
-    // Switch Active Server
-    function switchServer(newIndex) {
-      if (newIndex === currentServerIndex) return;
-      currentServerIndex = newIndex;
-      renderServerListUI();
+    async function initFirebase() {
+      const statusBadge = document.getElementById('connection-status-badge');
+      const statusDot = document.getElementById('status-ping-dot');
+      const statusText = document.getElementById('status-text');
+      const errorBanner = document.getElementById('error-alert-banner');
 
-      if (currentUser) {
-        connectToServerRoom(newIndex);
+      try {
+        if (!getApps().length) {
+          app = initializeApp(activeConfig);
+        } else {
+          app = getApps()[0];
+        }
+
+        auth = getAuth(app);
+        db = getFirestore(app);
+
+        // Listen for Auth changes
+        onAuthStateChanged(auth, (user) => {
+          if (user && !user.isAnonymous) {
+            state.currentUser = user;
+            updateUIWithUserData(user);
+            document.getElementById('modal-login').classList.add('hidden');
+            state.firebaseConnected = true;
+            statusBadge.className = 'px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5';
+            statusDot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+            statusText.innerText = 'Trực tuyến (Realtime FB)';
+            errorBanner.classList.add('hidden');
+            subscribeToMessages();
+          } else {
+            state.currentUser = null;
+            document.getElementById('modal-login').classList.remove('hidden');
+          }
+        });
+
+      } catch (err) {
+        console.error('Firebase Setup Error:', err);
+        state.firebaseConnected = false;
+        statusBadge.className = 'px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center gap-1.5';
+        statusDot.className = 'w-2 h-2 rounded-full bg-rose-400';
+        statusText.innerText = 'Lỗi kết nối Firebase';
+        errorBanner.classList.remove('hidden');
       }
     }
 
-    // Connect to Server Room Firebase Paths
-    function connectToServerRoom(srvIndex) {
-      const server = SERVERS[srvIndex];
+    function updateUIWithUserData(user) {
+      const avatarUrl = user.photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${user.uid}`;
+      const name = user.displayName || 'Người dùng Facebook';
 
-      // Update UI Header
-      document.getElementById('current-server-title').innerHTML = `
-        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-        ${server.name}
-      `;
-      document.getElementById('chat-header-title').innerText = server.name;
-
-      // Unsubscribe existing listeners
-      if (messagesListenerRef) off(messagesListenerRef);
-      if (presenceListenerRef) off(presenceListenerRef);
-
-      // Setup Realtime Listeners
-      setupPresence(server.key);
-      listenMessages(server.key);
+      document.getElementById('user-avatar-btn').src = avatarUrl;
+      document.getElementById('current-username-display').innerText = name;
+      document.getElementById('tooltip-user-name').innerText = name;
     }
 
-    // Presence / Active Online Tracking
-    function setupPresence(serverKey) {
-      if (!currentUser) return;
+    function subscribeToMessages() {
+      if (state.unsubscribeListener) {
+        state.unsubscribeListener();
+        state.unsubscribeListener = null;
+      }
 
-      const userPresenceRef = ref(db, `servers/${serverKey}/presence/${currentUser.uid}`);
-      const connectedRef = ref(db, ".info/connected");
+      if (!state.currentUser || !db) {
+        renderMessages([]);
+        return;
+      }
 
-      onValue(connectedRef, (snap) => {
-        if (snap.val() === true) {
-          onDisconnect(userPresenceRef).remove();
+      // Mandatory Firestore path for artifacts
+      const messagesRef = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
 
-          set(userPresenceRef, {
-            uid: currentUser.uid,
-            name: currentUser.displayName || 'Khách',
-            photo: currentUser.photoURL || '',
-            lastSeen: serverTimestamp()
+      state.unsubscribeListener = onSnapshot(
+        messagesRef,
+        (snapshot) => {
+          const list = [];
+          snapshot.forEach((doc) => {
+            const data = doc.data();
+            if (!data.server || data.server === state.currentServer) {
+              list.push({ id: doc.id, ...data });
+            }
           });
-        }
-      });
 
-      // Listen for all users online on this server
-      const allPresenceRef = ref(db, `servers/${serverKey}/presence`);
-      presenceListenerRef = allPresenceRef;
-
-      onValue(allPresenceRef, (snapshot) => {
-        const usersContainer = document.getElementById('online-users-list');
-        usersContainer.innerHTML = '';
-
-        let count = 0;
-        const data = snapshot.val();
-
-        if (data) {
-          Object.values(data).forEach(u => {
-            count++;
-            const userCard = document.createElement('div');
-            userCard.className = "flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-800/60 transition text-xs";
-            userCard.innerHTML = `
-              <div class="relative flex-shrink-0">
-                <img src="${u.photo || 'https://api.dicebear.com/7.x/bottts/svg?seed=Guest'}" class="w-7 h-7 rounded-xl object-cover bg-slate-800">
-                <span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-slate-900"></span>
-              </div>
-              <span class="text-slate-200 font-medium truncate">${escapeHtml(u.name)}</span>
-            `;
-            usersContainer.appendChild(userCard);
-          });
-        }
-
-        document.getElementById('online-count-badge').innerText = count;
-      });
-    }
-
-    // Realtime Message Stream
-    let initialLoadComplete = false;
-
-    function listenMessages(serverKey) {
-      const messagesRef = ref(db, `servers/${serverKey}/messages`);
-      messagesListenerRef = messagesRef;
-      initialLoadComplete = false;
-
-      onValue(messagesRef, (snapshot) => {
-        const container = document.getElementById('messages-container');
-        container.innerHTML = '';
-
-        const data = snapshot.val();
-        if (!data) {
-          container.innerHTML = `
-            <div class="flex flex-col items-center justify-center h-full text-slate-500 text-xs space-y-2">
-              <i class="fa-regular fa-comments text-4xl opacity-40"></i>
-              <p class="font-semibold text-slate-400">Chưa có tin nhắn nào tại ${SERVERS[currentServerIndex].name}</p>
-              <p>Hãy là người đầu tiên mở lời trò chuyện!</p>
-            </div>
-          `;
-          initialLoadComplete = true;
-          return;
-        }
-
-        const messagesArray = Object.entries(data);
-
-        messagesArray.forEach(([msgId, msg]) => {
-          const isMe = currentUser && msg.uid === currentUser.uid;
-          const msgEl = document.createElement('div');
-          msgEl.className = `flex gap-3 max-w-[88%] md:max-w-[75%] ${isMe ? 'ml-auto flex-row-reverse' : ''} animate-pop-in`;
-
-          const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '';
-
-          // Reactions HTML
-          let reactionsHtml = '';
-          if (msg.reactions) {
-            reactionsHtml = '<div class="flex flex-wrap gap-1 mt-1.5">';
-            Object.entries(msg.reactions).forEach(([emoji, count]) => {
-              reactionsHtml += `<span class="bg-slate-900/90 text-[10px] px-2 py-0.5 rounded-full border border-slate-700/60 shadow">${emoji} ${count}</span>`;
-            });
-            reactionsHtml += '</div>';
+          // Sort by timestamp in memory
+          list.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+          
+          if (list.length > state.messages.length && state.messages.length > 0) {
+            playNotificationSound('receive');
           }
 
-          msgEl.innerHTML = `
-            <img src="${msg.photo || 'https://api.dicebear.com/7.x/bottts/svg?seed=Guest'}" class="w-8 h-8 rounded-2xl object-cover bg-slate-800 flex-shrink-0 mt-1 shadow-md">
-            <div>
-              <div class="flex items-center gap-2 mb-1 ${isMe ? 'justify-end' : ''}">
-                <span class="text-xs font-bold text-slate-300">${escapeHtml(msg.sender)}</span>
-                <span class="text-[10px] text-slate-500">${timeStr}</span>
-              </div>
-              <div class="p-3.5 rounded-2xl text-sm leading-relaxed relative group ${
-                isMe 
-                  ? 'chat-bubble-me text-white rounded-tr-none' 
-                  : 'chat-bubble-other text-slate-100 rounded-tl-none'
-              }">
-                ${escapeHtml(msg.text)}
-
-                <!-- Quick Reaction Hover Trigger -->
-                <div class="absolute top-0 ${isMe ? '-left-12' : '-right-12'} opacity-0 group-hover:opacity-100 transition flex items-center gap-1 bg-slate-900 border border-slate-700 px-1.5 py-0.5 rounded-full shadow-xl">
-                  <button class="msg-react-btn text-xs hover:scale-125 transition" data-id="${msgId}" data-emoji="❤️">❤️</button>
-                  <button class="msg-react-btn text-xs hover:scale-125 transition" data-id="${msgId}" data-emoji="👍">👍</button>
-                  <button class="msg-react-btn text-xs hover:scale-125 transition" data-id="${msgId}" data-emoji="😂">😂</button>
-                </div>
-              </div>
-              ${reactionsHtml}
-            </div>
-          `;
-
-          container.appendChild(msgEl);
-        });
-
-        // Play Sound on New Incoming Message
-        if (initialLoadComplete) {
-          const lastMsg = messagesArray[messagesArray.length - 1][1];
-          playPopSound(lastMsg.uid !== currentUser?.uid);
+          state.messages = list;
+          renderMessages(list);
+        },
+        (error) => {
+          console.warn('Firestore Subscription Error:', error);
+          document.getElementById('error-alert-banner').classList.remove('hidden');
+          document.getElementById('error-alert-text').innerText = 'Không thể tải tin nhắn Realtime: ' + error.message;
         }
-        initialLoadComplete = true;
-
-        // Auto Scroll Bottom
-        container.scrollTop = container.scrollHeight;
-
-        // Attach Reaction Click Events
-        document.querySelectorAll('.msg-react-btn').forEach(btn => {
-          btn.onclick = (e) => {
-            const mId = e.currentTarget.dataset.id;
-            const emoji = e.currentTarget.dataset.emoji;
-            addReaction(mId, emoji);
-          };
-        });
-      });
+      );
     }
 
-    // Add Reaction to Message
-    function addReaction(msgId, emoji) {
-      const serverKey = SERVERS[currentServerIndex].key;
-      const reactionRef = ref(db, `servers/${serverKey}/messages/${msgId}/reactions/${emoji}`);
+    function renderMessages(messages) {
+      const container = document.getElementById('messages-container');
       
-      onValue(reactionRef, (snap) => {
-        const currentCount = snap.val() || 0;
-        set(reactionRef, currentCount + 1);
-      }, { onlyOnce: true });
+      if (messages.length === 0) {
+        container.innerHTML = `
+          <div class="flex flex-col items-center justify-center h-full text-slate-500 text-xs space-y-2">
+            <div class="w-14 h-14 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-facebook text-2xl">
+              <i class="fa-brands fa-facebook-messenger"></i>
+            </div>
+            <p class="font-semibold text-slate-400">Chưa có tin nhắn nào trong ${state.currentServer}.</p>
+            <p class="text-[11px] text-slate-500">Hãy gửi tin nhắn đầu tiên bằng tài khoản Facebook của bạn!</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = '';
+      messages.forEach((msg) => {
+        const isMe = state.currentUser && (msg.uid === state.currentUser.uid || msg.sender === state.currentUser.displayName);
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `flex items-end gap-2.5 ${isMe ? 'flex-row-reverse' : 'flex-row'}`;
+        
+        const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Vừa xong';
+
+        msgDiv.innerHTML = `
+          <img src="${msg.avatar || 'https://api.dicebear.com/7.x/bottts/svg?seed=FBUser'}" class="w-8 h-8 rounded-xl object-cover bg-slate-800 border border-slate-700 flex-shrink-0">
+          <div class="flex flex-col max-w-[75%] ${isMe ? 'items-end' : 'items-start'}">
+            <div class="flex items-center gap-1 mb-1 px-1">
+              <i class="fa-brands fa-facebook text-[10px] text-facebook"></i>
+              <span class="text-[10px] font-bold text-slate-400">${escapeHTML(msg.sender)}</span>
+            </div>
+            <div class="px-4 py-2.5 rounded-2xl text-sm ${isMe ? 'chat-bubble-me text-white rounded-br-none' : 'chat-bubble-other text-slate-100 rounded-bl-none'} shadow-md break-words">
+              ${escapeHTML(msg.text)}
+            </div>
+            <span class="text-[9px] text-slate-500 mt-1 px-1">${timeStr}</span>
+          </div>
+        `;
+        container.appendChild(msgDiv);
+      });
+
+      // Auto scroll to latest message
+      container.scrollTop = container.scrollHeight;
     }
 
-    // Send New Message
+    function escapeHTML(str) {
+      return (str || '').replace(/[&<>'"]/g, 
+        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+      );
+    }
+
+    async function handleSendMessage(text) {
+      if (!text.trim() || !state.currentUser) return;
+      
+      const newMsg = {
+        sender: state.currentUser.displayName || 'Facebook User',
+        avatar: state.currentUser.photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${state.currentUser.uid}`,
+        text: text.trim(),
+        server: state.currentServer,
+        timestamp: Date.now(),
+        uid: state.currentUser.uid
+      };
+
+      playNotificationSound('send');
+
+      if (db) {
+        try {
+          const messagesRef = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
+          await addDoc(messagesRef, newMsg);
+        } catch (e) {
+          console.warn('Failed to post message:', e);
+          document.getElementById('error-alert-banner').classList.remove('hidden');
+          document.getElementById('error-alert-text').innerText = 'Không gửi được tin nhắn: ' + e.message;
+        }
+      }
+    }
+
+    const facebookLoginBtn = document.getElementById('btn-facebook-login');
+    const loginIndicator = document.getElementById('login-loading-indicator');
+    const loginError = document.getElementById('login-error-message');
+
+    facebookLoginBtn.onclick = async () => {
+      loginError.classList.add('hidden');
+      loginIndicator.classList.remove('hidden');
+      facebookLoginBtn.disabled = true;
+
+      try {
+        if (!auth) {
+          throw new Error("Hệ thống Firebase chưa được khởi tạo. Vui lòng kiểm tra Firebase Key.");
+        }
+        await signInWithPopup(auth, facebookProvider);
+      } catch (error) {
+        console.error("Facebook Sign In Failed:", error);
+        
+        let msg = "Không thể đăng nhập bằng Facebook: " + error.message;
+        if (error.code === 'auth/popup-blocked') {
+          msg = "Cửa sổ Facebook bị trình duyệt chặn (Popup Blocked). Vui lòng cho phép hiện Popup.";
+        } else if (error.code === 'auth/unauthorized-domain') {
+          msg = "Tên miền chưa được cấp phép trong Firebase Console -> Authentication -> Settings -> Authorized domains.";
+        } else if (error.code === 'auth/configuration-not-found') {
+          msg = "Bạn chưa bật nhà cung cấp Facebook trong Firebase Console -> Authentication -> Sign-in method.";
+        }
+
+        loginError.innerText = msg;
+        loginError.classList.remove('hidden');
+      } finally {
+        loginIndicator.classList.add('hidden');
+        facebookLoginBtn.disabled = false;
+      }
+    };
+
+    // Sign Out Handler
+    document.getElementById('btn-logout').onclick = async () => {
+      if (auth) {
+        await signOut(auth);
+        document.getElementById('modal-login').classList.remove('hidden');
+      }
+    };
+
+    // Chat Form Submission
     document.getElementById('chat-form').onsubmit = (e) => {
       e.preventDefault();
       const input = document.getElementById('message-input');
-      const text = input.value.trim();
-
-      if (!text || !currentUser) return;
-
-      const serverKey = SERVERS[currentServerIndex].key;
-      const messagesRef = ref(db, `servers/${serverKey}/messages`);
-
-      push(messagesRef, {
-        uid: currentUser.uid,
-        sender: currentUser.displayName || 'Khách',
-        photo: currentUser.photoURL || '',
-        text: text,
-        timestamp: serverTimestamp()
-      });
-
+      const text = input.value;
       input.value = '';
+      handleSendMessage(text);
     };
 
-    // Quick Emoji Bar Insertion
-    document.querySelectorAll('.emoji-btn').forEach(btn => {
+    // Emoji Quick Reactions
+    document.querySelectorAll('.emoji-quick-btn').forEach((btn) => {
       btn.onclick = () => {
-        const input = document.getElementById('message-input');
-        input.value += btn.innerText;
-        input.focus();
+        handleSendMessage(btn.innerText);
       };
     });
 
-    // Helper: Escape HTML
-    function escapeHtml(unsafe) {
-      return unsafe
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-    }
-
-    // Toggle Mobile Sidebar
-    document.getElementById('btn-toggle-sidebar').onclick = () => {
-      document.getElementById('channel-sidebar').classList.toggle('hidden');
+    // Config Modal Controls
+    const modalConfig = document.getElementById('modal-config');
+    document.getElementById('btn-open-config').onclick = () => {
+      document.getElementById('input-firebase-config').value = JSON.stringify(activeConfig, null, 2);
+      modalConfig.classList.remove('hidden');
+    };
+    document.getElementById('btn-close-config').onclick = () => modalConfig.classList.add('hidden');
+    document.getElementById('btn-fix-firebase-help').onclick = () => {
+      document.getElementById('input-firebase-config').value = JSON.stringify(activeConfig, null, 2);
+      modalConfig.classList.remove('hidden');
     };
 
-    // Brand Logo Click Home
-    document.getElementById('btn-brand-home').onclick = () => {
-      switchServer(0);
+    document.getElementById('btn-save-config').onclick = () => {
+      const raw = document.getElementById('input-firebase-config').value.trim();
+      try {
+        const parsed = JSON.parse(raw);
+        localStorage.setItem('ultra_custom_firebase_config', JSON.stringify(parsed));
+        location.reload();
+      } catch (err) {
+        alert('Cấu hình JSON không hợp lệ! Vui lòng kiểm tra lại cú pháp.');
+      }
     };
 
-    // Initialize UI
-    renderServerListUI();
+    document.getElementById('btn-reset-config').onclick = () => {
+      localStorage.removeItem('ultra_custom_firebase_config');
+      location.reload();
+    };
 
+    // Sound Toggle
+    const soundBtn = document.getElementById('btn-toggle-sound');
+    const soundIcon = document.getElementById('sound-icon');
+    soundBtn.onclick = () => {
+      state.soundEnabled = !state.soundEnabled;
+      soundIcon.className = state.soundEnabled ? 'fa-solid fa-volume-high text-sm' : 'fa-solid fa-volume-xmark text-sm text-slate-500';
+    };
+
+    window.onload = () => {
+      renderServerButtons();
+      initFirebase();
+    };
   </script>
 </body>
 </html>
