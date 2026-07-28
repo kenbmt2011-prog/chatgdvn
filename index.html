@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="vi" class="h-full bg-slate-950 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multi-Server Ultra Chat Messenger</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Google Font - Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+    ::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.4); border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.8); }
+    
+    .glass-panel {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+  </style>
+</head>
+<body class="h-full font-sans antialiased flex flex-col overflow-hidden bg-slate-950 text-slate-100">
+
+  <div id="app" class="flex h-screen w-screen overflow-hidden">
+
+    <!-- 1. LEFTMOST SERVER SELECTOR BAR (Discord Style) -->
+    <aside class="w-18 md:w-20 bg-slate-900 flex flex-col items-center py-4 space-y-4 border-r border-slate-800/80 z-20 flex-shrink-0">
+      <div class="flex flex-col items-center space-y-1 group relative">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
+          <i class="fa-solid fa-comments text-xl"></i>
+        </div>
+        <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">MultiChat</span>
+      </div>
+
+      <div class="w-10 h-[1px] bg-slate-800 my-1"></div>
+
+      <!-- SERVER BUTTONS 1 TO 5 -->
+      <div id="server-list" class="flex-1 w-full flex flex-col items-center space-y-3 overflow-y-auto px-2">
+        <!-- Dynamic Server Items inserted via JS -->
+      </div>
+
+      <!-- USER PROFILE MINI / LOGOUT -->
+      <div class="mt-auto flex flex-col items-center space-y-2 pt-2 border-t border-slate-800/80 w-full">
+        <button id="btn-show-config" title="Cấu hình Firebase API Key" class="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500 hover:text-white transition flex items-center justify-center">
+          <i class="fa-solid fa-key"></i>
+        </button>
+        <button id="btn-show-profile" class="w-10 h-10 rounded-full bg-slate-800 overflow-hidden border border-slate-700 focus:ring-2 focus:ring-indigo-500 hover:opacity-90 transition">
+          <img id="user-avatar" src="https://placehold.co/100x100/6366f1/ffffff?text=U" alt="Avatar" class="w-full h-full object-cover">
+        </button>
+        <button id="btn-logout" title="Đăng xuất" class="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white transition flex items-center justify-center">
+          <i class="fa-solid fa-right-from-bracket"></i>
+        </button>
+      </div>
+    </aside>
+
+    <!-- 2. SERVER CHANNEL & USERS SIDEBAR -->
+    <aside id="channel-sidebar" class="w-64 bg-slate-900/60 border-r border-slate-800/80 hidden md:flex flex-col z-10 flex-shrink-0">
+      <!-- Server Banner/Header -->
+      <div class="p-4 border-b border-slate-800/80 flex items-center justify-between">
+        <div>
+          <h2 id="current-server-title" class="font-bold text-slate-100 flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            Server Chat #1
+          </h2>
+          <p id="current-server-capacity" class="text-xs text-slate-400 mt-0.5">Sức chứa: 0/99 kết nối</p>
+        </div>
+      </div>
+
+      <!-- Online Active Users List -->
+      <div class="flex-1 overflow-y-auto p-3 space-y-4">
+        <div>
+          <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider px-2 mb-2 flex justify-between items-center">
+            <span>Thành viên Online</span>
+            <span id="online-count-badge" class="bg-indigo-500/20 text-indigo-300 text-[10px] px-2 py-0.5 rounded-full">0</span>
+          </div>
+          <div id="online-users-list" class="space-y-1">
+            <!-- Dynamic Users List -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Notice Panel -->
+      <div class="p-3 m-3 bg-indigo-950/40 border border-indigo-500/20 rounded-xl text-xs text-indigo-200">
+        <i class="fa-solid fa-shield-halved text-indigo-400 mr-1"></i>
+        <strong>Miễn phí 100%:</strong> Chia làm 5 Server riêng biệt, tối đa 99 người/Server để không bao giờ nghẽn!
+      </div>
+    </aside>
+
+    <!-- 3. MAIN CHAT AREA -->
+    <main class="flex-1 flex flex-col h-full bg-slate-950 relative">
+      
+      <!-- Top Chat Header -->
+      <header class="h-16 border-b border-slate-800/80 bg-slate-900/40 px-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <button id="btn-toggle-sidebar" class="md:hidden text-slate-400 hover:text-slate-200 p-2">
+            <i class="fa-solid fa-bars text-lg"></i>
+          </button>
+          <div>
+            <h1 id="chat-header-title" class="font-semibold text-slate-100 flex items-center gap-2">
+              Server Chat #1
+            </h1>
+            <p id="chat-header-subtitle" class="text-xs text-slate-400">Trạng thái: Kết nối bảo mật Realtime Firebase</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <div class="bg-slate-800/80 text-xs px-3 py-1.5 rounded-lg border border-slate-700/60 text-slate-300 flex items-center gap-2">
+            <i class="fa-solid fa-user-shield text-emerald-400"></i>
+            <span id="user-display-name">Người dùng</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Chat Messages Scroll Container -->
+      <div id="messages-container" class="flex-1 overflow-y-auto p-4 space-y-4">
+        <!-- Messages will be rendered dynamically -->
+        <div class="text-center py-8 text-slate-500 text-sm">
+          <i class="fa-solid fa-spinner fa-spin text-2xl text-indigo-500 mb-2"></i>
+          <p>Đang tải dòng tin nhắn bảo mật...</p>
+        </div>
+      </div>
+
+      <!-- Chat Input Box -->
+      <footer class="p-4 border-t border-slate-800/80 bg-slate-900/30">
+        <form id="chat-form" class="flex items-center gap-2">
+          <div class="relative flex-1">
+            <input 
+              type="text" 
+              id="message-input" 
+              placeholder="Nhập tin nhắn..." 
+              class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-4 py-3 pl-4 pr-10 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm transition"
+              required
+              autocomplete="off"
+            >
+          </div>
+          <button 
+            type="submit" 
+            class="bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-medium px-5 py-3 rounded-xl transition flex items-center gap-2 text-sm shadow-lg shadow-indigo-600/20"
+          >
+            <span>Gửi</span>
+            <i class="fa-solid fa-paper-plane text-xs"></i>
+          </button>
+        </form>
+      </footer>
+    </main>
+
+  </div>
+
+  <!-- 4. AUTH MODAL (LOGIN / REGISTER / FACEBOOK) -->
+  <div id="auth-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
+    <div class="glass-panel w-full max-w-md rounded-2xl p-6 md:p-8 shadow-2xl relative border border-slate-700/60">
+      
+      <!-- Logo & Title -->
+      <div class="text-center mb-6">
+        <div class="w-16 h-16 bg-indigo-600 rounded-2xl mx-auto flex items-center justify-center text-white text-2xl shadow-xl shadow-indigo-500/30 mb-3">
+          <i class="fa-solid fa-comment-dots"></i>
+        </div>
+        <h2 class="text-2xl font-bold text-white">Đăng Nhập Messenger</h2>
+        <p class="text-slate-400 text-xs mt-1">Hệ thống nhắn tin đa Server không giới hạn</p>
+      </div>
+
+      <!-- Auth Tabs -->
+      <div class="flex border-b border-slate-700/60 mb-6">
+        <button id="tab-login-btn" class="flex-1 py-2 text-sm font-semibold text-indigo-400 border-b-2 border-indigo-500">Đăng Nhập</button>
+        <button id="tab-register-btn" class="flex-1 py-2 text-sm font-semibold text-slate-400 border-b-2 border-transparent hover:text-slate-200">Đăng Ký</button>
+      </div>
+
+      <!-- LOGIN FORM -->
+      <form id="login-form" class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Email</label>
+          <input type="email" id="login-email" class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500" placeholder="yourname@gmail.com" required>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Mật khẩu</label>
+          <input type="password" id="login-password" class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 rounded-xl text-sm transition shadow-lg shadow-indigo-600/30">
+          Đăng Nhập Email
+        </button>
+      </form>
+
+      <!-- REGISTER FORM (Hidden by default) -->
+      <form id="register-form" class="space-y-4 hidden">
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Tên hiển thị</label>
+          <input type="text" id="reg-name" class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500" placeholder="Nguyễn Văn A" required>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Email</label>
+          <input type="email" id="reg-email" class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500" placeholder="yourname@gmail.com" required>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Mật khẩu</label>
+          <input type="password" id="reg-password" class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500" placeholder="Tối thiểu 6 ký tự" required>
+        </div>
+        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2.5 rounded-xl text-sm transition shadow-lg shadow-emerald-600/30">
+          Tạo Tài Khoản Mới
+        </button>
+      </form>
+
+      <!-- Divider -->
+      <div class="relative my-5">
+        <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-700/60"></div></div>
+        <div class="relative flex justify-center text-xs uppercase"><span class="bg-slate-900 px-2 text-slate-400">Hoặc tiếp tục với</span></div>
+      </div>
+
+      <!-- FACEBOOK LOGIN BUTTON -->
+      <button id="btn-facebook-login" class="w-full bg-[#1877F2] hover:bg-[#166fe5] text-white font-medium py-2.5 rounded-xl text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20">
+        <i class="fa-brands fa-facebook-f text-base"></i>
+        <span>Liên kết & Đăng nhập bằng Facebook</span>
+      </button>
+
+      <p class="text-[11px] text-slate-400 text-center mt-4">
+        <i class="fa-solid fa-lock text-slate-500 mr-1"></i> Thông tin đăng nhập được mã hóa và lưu trữ an toàn bởi Firebase Auth.
+      </p>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- 5. FIREBASE API KEY CONFIG MODAL -->
+  <div id="config-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="glass-panel w-full max-w-xl rounded-2xl p-6 md:p-8 shadow-2xl relative border border-slate-700/60 max-h-[90vh] flex flex-col">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+        <div class="flex items-center gap-2">
+          <div class="w-9 h-9 rounded-xl bg-indigo-600/20 text-indigo-400 flex items-center justify-center">
+            <i class="fa-solid fa-key text-lg"></i>
+          </div>
+          <div>
+            <h2 class="text-lg font-bold text-white">Cấu Hình Firebase API Keys</h2>
+            <p class="text-xs text-slate-400">Gán thông tin Firebase Project cho các Server</p>
+          </div>
+        </div>
+        <button id="btn-close-config" class="text-slate-400 hover:text-white p-2 text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="py-4 space-y-4 overflow-y-auto flex-1 text-xs">
+        <div class="flex items-center gap-2 bg-indigo-950/40 p-3 rounded-xl border border-indigo-500/20 text-indigo-200">
+          <i class="fa-solid fa-circle-info text-indigo-400 text-sm"></i>
+          <span>Dán đoạn <strong>firebaseConfig</strong> dạng JSON lấy từ Firebase Console vào khung bên dưới để kết nối dữ liệu thật.</span>
+        </div>
+
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Chọn Server muốn cấu hình:</label>
+          <select id="config-server-select" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
+            <option value="0">Server 1 (Hà Nội)</option>
+            <option value="1">Server 2 (Sài Gòn)</option>
+            <option value="2">Server 3 (Đà Nẵng)</option>
+            <option value="3">Server 4 (Cần Thơ)</option>
+            <option value="4">Server 5 (Quốc Tế)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Firebase Config (JSON Object):</label>
+          <textarea id="config-json-input" rows="8" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-emerald-400 font-mono text-xs focus:outline-none focus:border-indigo-500" placeholder='{
+  "apiKey": "AIzaSy...",
+  "authDomain": "your-project.firebaseapp.com",
+  "databaseURL": "https://your-project-default-rtdb.firebaseio.com",
+  "projectId": "your-project",
+  "storageBucket": "your-project.appspot.com",
+  "messagingSenderId": "123456789",
+  "appId": "1:123456789:web:abcdef"
+}'></textarea>
+        </div>
+      </div>
+
+      <div class="pt-4 border-t border-slate-800 flex justify-end gap-3">
+        <button id="btn-reset-config" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition">Đặt lại Mặc định</button>
+        <button id="btn-save-config" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-medium transition shadow-lg shadow-indigo-600/30">Lưu Key & Kết Nối Ngay</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase v11 Module Import Script -->
+  <script type="module">
+    import { initializeApp, deleteApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { 
+      getAuth, 
+      signInWithEmailAndPassword, 
+      createUserWithEmailAndPassword, 
+      signInWithPopup, 
+      FacebookAuthProvider, 
+      signOut, 
+      onAuthStateChanged, 
+      updateProfile 
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { 
+      getDatabase, 
+      ref, 
+      push, 
+      set, 
+      onValue, 
+      off, 
+      onDisconnect, 
+      serverTimestamp, 
+      goOffline, 
+      goOnline 
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
+
+    /* ========================================================================
+       1. FIREBASE CONFIGURATIONS FOR 5 FREE SERVERS
+       ======================================================================== */
+    
+    // Config mặc định (hoặc từ môi trường hệ thống)
+    const ENV_FIREBASE_CONFIG = typeof __firebase_config !== 'undefined' 
+      ? JSON.parse(__firebase_config) 
+      : {
+          apiKey: "AIzaSyDC70Llo5pUsOkmDyx1mzpnlLTXyRqSkII",
+          authDomain: "chatgdvn.firebaseapp.com",
+          databaseURL: "https://chatgdvn-default-rtdb.firebaseio.com",
+          projectId: "chatgdvn",
+          storageBucket: "chatgdvn.firebasestorage.app",
+          messagingSenderId: "59954267016",
+          appId: "1:59954267016:web:65ff7de0342188f5bdf03d",
+          measurementId: "G-06XHS5VDCK"
+        };
+
+    // Danh sách 5 Server
+    let SERVER_CONFIGS = [
+      { id: 1, name: "Server 1 (Hà Nội)", config: ENV_FIREBASE_CONFIG, maxCapacity: 99 },
+      { id: 2, name: "Server 2 (Sài Gòn)", config: ENV_FIREBASE_CONFIG, maxCapacity: 99 },
+      { id: 3, name: "Server 3 (Đà Nẵng)", config: ENV_FIREBASE_CONFIG, maxCapacity: 99 },
+      { id: 4, name: "Server 4 (Cần Thơ)", config: ENV_FIREBASE_CONFIG, maxCapacity: 99 },
+      { id: 5, name: "Server 5 (Quốc Tế)", config: ENV_FIREBASE_CONFIG, maxCapacity: 99 }
+    ];
+
+    // Đọc các API Key tùy chỉnh do người dùng nhập từ trước
+    try {
+      const savedConfigs = localStorage.getItem('CUSTOM_FIREBASE_SERVERS');
+      if (savedConfigs) {
+        const parsed = JSON.parse(savedConfigs);
+        parsed.forEach((customConf, i) => {
+          if (customConf && SERVER_CONFIGS[i]) {
+            SERVER_CONFIGS[i].config = customConf;
+          }
+        });
+      }
+    } catch (e) {
+      console.log('Chưa có API key cấu hình tùy chỉnh');
+    }
+
+    // Global State
+    let currentUser = null;
+    let currentServerIndex = 0; // Mặc định Server 1
+    let activeApp = null;
+    let activeAuth = null;
+    let activeDb = null;
+    let messagesListenerRef = null;
+    let presenceListenerRef = null;
+
+    /* ========================================================================
+       2. HELPER UTILITIES & UI TOAST
+       ======================================================================== */
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      
+      const bgColors = {
+        success: 'bg-emerald-600',
+        error: 'bg-rose-600',
+        info: 'bg-indigo-600'
+      };
+
+      toast.className = `${bgColors[type] || 'bg-indigo-600'} text-white px-4 py-3 rounded-xl shadow-xl text-sm flex items-center gap-2 transform transition duration-300 ease-out pointer-events-auto`;
+      toast.innerHTML = `
+        <i class="fa-solid ${type === 'success' ? 'fa-circle-check' : type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-info'}"></i>
+        <span>${message}</span>
+      `;
+      
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    /* ========================================================================
+       3. AUTHENTICATION LOGIC (EMAIL & FACEBOOK)
+       ======================================================================== */
+    
+    // Khởi tạo Auth mặc định với Primary Server
+    const defaultApp = initializeApp(SERVER_CONFIGS[0].config, "PRIMARY_AUTH_APP");
+    const mainAuth = getAuth(defaultApp);
+
+    // Bật Facebook Provider
+    const facebookProvider = new FacebookAuthProvider();
+
+    // Toggle Login/Register Tabs
+    document.getElementById('tab-login-btn').addEventListener('click', () => {
+      document.getElementById('login-form').classList.remove('hidden');
+      document.getElementById('register-form').classList.add('hidden');
+      document.getElementById('tab-login-btn').className = "flex-1 py-2 text-sm font-semibold text-indigo-400 border-b-2 border-indigo-500";
+      document.getElementById('tab-register-btn').className = "flex-1 py-2 text-sm font-semibold text-slate-400 border-b-2 border-transparent hover:text-slate-200";
+    });
+
+    document.getElementById('tab-register-btn').addEventListener('click', () => {
+      document.getElementById('register-form').classList.remove('hidden');
+      document.getElementById('login-form').classList.add('hidden');
+      document.getElementById('tab-register-btn').className = "flex-1 py-2 text-sm font-semibold text-indigo-400 border-b-2 border-indigo-500";
+      document.getElementById('tab-login-btn').className = "flex-1 py-2 text-sm font-semibold text-slate-400 border-b-2 border-transparent hover:text-slate-200";
+    });
+
+    // Handle Login Submit
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value;
+      const pass = document.getElementById('login-password').value;
+
+      try {
+        await signInWithEmailAndPassword(mainAuth, email, pass);
+        showToast("Đăng nhập thành công!", "success");
+      } catch (err) {
+        showToast("Lỗi đăng nhập: " + err.message, "error");
+      }
+    });
+
+    // Handle Registration Submit
+    document.getElementById('register-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('reg-name').value;
+      const email = document.getElementById('reg-email').value;
+      const pass = document.getElementById('reg-password').value;
+
+      try {
+        const userCred = await createUserWithEmailAndPassword(mainAuth, email, pass);
+        await updateProfile(userCred.user, {
+          displayName: name,
+          photoURL: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(name)}`
+        });
+        showToast("Đăng ký tài khoản thành công!", "success");
+      } catch (err) {
+        showToast("Lỗi đăng ký: " + err.message, "error");
+      }
+    });
+
+    // Handle Facebook Login
+    document.getElementById('btn-facebook-login').addEventListener('click', async () => {
+      try {
+        const result = await signInWithPopup(mainAuth, facebookProvider);
+        showToast(`Xin chào Facebook user: ${result.user.displayName}`, "success");
+      } catch (err) {
+        showToast("Lỗi liên kết Facebook: " + err.message, "error");
+      }
+    });
+
+    // Handle Logout
+    document.getElementById('btn-logout').addEventListener('click', async () => {
+      if (confirm("Bạn có chắc chắn muốn đăng xuất không?")) {
+        try {
+          await signOut(mainAuth);
+          showToast("Đã đăng xuất tài khoản", "info");
+        } catch (err) {
+          showToast("Không thể đăng xuất: " + err.message, "error");
+        }
+      }
+    });
+
+    // Auth State Changed Observer
+    onAuthStateChanged(mainAuth, (user) => {
+      const authModal = document.getElementById('auth-modal');
+      if (user) {
+        currentUser = user;
+        authModal.classList.add('hidden');
+        
+        // Update User UI
+        document.getElementById('user-display-name').innerText = user.displayName || user.email;
+        document.getElementById('user-avatar').src = user.photoURL || `https://placehold.co/100x100/6366f1/ffffff?text=${(user.displayName||'U')[0]}`;
+        
+        // Connect to initial Server Chat
+        connectToChatServer(currentServerIndex);
+      } else {
+        currentUser = null;
+        authModal.classList.remove('hidden');
+      }
+    });
+
+    /* ========================================================================
+       4. MULTI-SERVER SWITCHING & REALTIME CHAT ENGINE
+       ======================================================================== */
+
+    // Render Server Selector Buttons
+    function renderServerListUI() {
+      const serverListContainer = document.getElementById('server-list');
+      serverListContainer.innerHTML = '';
+
+      SERVER_CONFIGS.forEach((srv, idx) => {
+        const isSelected = idx === currentServerIndex;
+        const btn = document.createElement('button');
+        btn.className = `w-12 h-12 rounded-2xl flex flex-col items-center justify-center font-bold text-xs transition relative group ${
+          isSelected 
+            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/40 ring-2 ring-indigo-400' 
+            : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
+        }`;
+        
+        btn.innerHTML = `
+          <span>S${srv.id}</span>
+          <span class="text-[9px] font-normal opacity-80">99 Max</span>
+          <div class="absolute left-full ml-3 px-2 py-1 bg-slate-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition pointer-events-none whitespace-nowrap z-30 shadow-xl border border-slate-700">
+            ${srv.name}
+          </div>
+        `;
+
+        btn.onclick = () => switchServer(idx);
+        serverListContainer.appendChild(btn);
+      });
+    }
+
+    // Switch Server Function
+    async function switchServer(newIndex) {
+      if (newIndex === currentServerIndex && activeDb) return;
+      
+      showToast(`Đang chuyển sang ${SERVER_CONFIGS[newIndex].name}...`, 'info');
+      currentServerIndex = newIndex;
+      renderServerListUI();
+
+      if (currentUser) {
+        await connectToChatServer(newIndex);
+      }
+    }
+
+    // Connect To Specific Firebase Realtime Database Instance
+    async function connectToChatServer(srvIndex) {
+      const serverConfig = SERVER_CONFIGS[srvIndex];
+
+      // Update Titles in UI
+      document.getElementById('current-server-title').innerText = serverConfig.name;
+      document.getElementById('chat-header-title').innerText = serverConfig.name;
+
+      // 1. Clean up old connection listeners if exist
+      if (activeDb) {
+        try {
+          if (messagesListenerRef) off(messagesListenerRef);
+          if (presenceListenerRef) off(presenceListenerRef);
+          goOffline(activeDb); // Ngắt kết nối để nhường slot 1/99 cho người khác!
+        } catch (e) {
+          console.log("Cleanup previous server connection:", e);
+        }
+      }
+
+      // 2. Initialize or select Firebase App for target Server
+      const appName = `SERVER_APP_${serverConfig.id}`;
+      try {
+        activeApp = initializeApp(serverConfig.config, appName);
+      } catch (e) {
+        // App exists, reuse it
+        activeApp = initializeApp(serverConfig.config, appName);
+      }
+
+      activeDb = getDatabase(activeApp);
+      goOnline(activeDb);
+
+      // 3. Register User Presence in this server
+      setupPresenceSystem(serverConfig.id);
+
+      // 4. Listen for Messages
+      listenForMessages();
+    }
+
+    // Presence & Active Users Counter
+    function setupPresenceSystem(serverId) {
+      if (!currentUser || !activeDb) return;
+
+      const myPresenceRef = ref(activeDb, `presence/${currentUser.uid}`);
+      const connectedRef = ref(activeDb, ".info/connected");
+
+      onValue(connectedRef, (snap) => {
+        if (snap.val() === true) {
+          // Set offline when user closes browser
+          onDisconnect(myPresenceRef).remove();
+
+          // Set online state
+          set(myPresenceRef, {
+            uid: currentUser.uid,
+            name: currentUser.displayName || currentUser.email,
+            photo: currentUser.photoURL || '',
+            lastSeen: serverTimestamp()
+          });
+        }
+      });
+
+      // Listen to all online users in current server
+      const allPresenceRef = ref(activeDb, "presence");
+      presenceListenerRef = allPresenceRef;
+
+      onValue(allPresenceRef, (snapshot) => {
+        const usersListEl = document.getElementById('online-users-list');
+        usersListEl.innerHTML = '';
+        
+        let count = 0;
+        const data = snapshot.val();
+        
+        if (data) {
+          Object.values(data).forEach(u => {
+            count++;
+            const item = document.createElement('div');
+            item.className = "flex items-center gap-2 p-2 rounded-lg hover:bg-slate-800/50 text-xs transition";
+            item.innerHTML = `
+              <div class="relative">
+                <img src="${u.photo || 'https://placehold.co/100x100/6366f1/ffffff?text=U'}" class="w-6 h-6 rounded-full object-cover">
+                <span class="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-emerald-500 ring-1 ring-slate-900"></span>
+              </div>
+              <span class="text-slate-300 truncate font-medium">${u.name}</span>
+            `;
+            usersListEl.appendChild(item);
+          });
+        }
+
+        document.getElementById('online-count-badge').innerText = count;
+        document.getElementById('current-server-capacity').innerText = `Sức chứa: ${count}/99 kết nối`;
+      });
+    }
+
+    // Listen & Render Realtime Messages
+    function listenForMessages() {
+      const messagesRef = ref(activeDb, "messages");
+      messagesListenerRef = messagesRef;
+
+      onValue(messagesRef, (snapshot) => {
+        const container = document.getElementById('messages-container');
+        container.innerHTML = '';
+
+        const data = snapshot.val();
+        if (!data) {
+          container.innerHTML = `
+            <div class="text-center py-12 text-slate-500 text-xs">
+              <i class="fa-regular fa-comments text-3xl mb-2 opacity-50"></i>
+              <p>Chưa có tin nhắn nào ở phòng chat này.</p>
+              <p class="mt-1">Hãy viết tin nhắn đầu tiên để mở đầu cuộc trò chuyện!</p>
+            </div>
+          `;
+          return;
+        }
+
+        Object.values(data).forEach(msg => {
+          const isMe = currentUser && msg.uid === currentUser.uid;
+          const msgEl = document.createElement('div');
+          msgEl.className = `flex gap-3 max-w-[85%] ${isMe ? 'ml-auto flex-row-reverse' : ''}`;
+
+          const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '';
+
+          msgEl.innerHTML = `
+            <img src="${msg.photo || 'https://placehold.co/100x100/6366f1/ffffff?text=U'}" class="w-8 h-8 rounded-full object-cover flex-shrink-0 mt-1">
+            <div>
+              <div class="flex items-center gap-2 mb-1 ${isMe ? 'justify-end' : ''}">
+                <span class="text-xs font-semibold text-slate-400">${msg.sender}</span>
+                <span class="text-[10px] text-slate-500">${timeStr}</span>
+              </div>
+              <div class="p-3.5 rounded-2xl text-sm leading-relaxed ${
+                isMe 
+                  ? 'bg-indigo-600 text-white rounded-tr-none shadow-md shadow-indigo-600/20' 
+                  : 'bg-slate-800 text-slate-100 rounded-tl-none border border-slate-700/60'
+              }">
+                ${escapeHtml(msg.text)}
+              </div>
+            </div>
+          `;
+
+          container.appendChild(msgEl);
+        });
+
+        // Auto Scroll to Bottom
+        container.scrollTop = container.scrollHeight;
+      });
+    }
+
+    // Send Message Event
+    document.getElementById('chat-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const input = document.getElementById('message-input');
+      const text = input.value.trim();
+
+      if (!text || !currentUser || !activeDb) return;
+
+      const messagesRef = ref(activeDb, "messages");
+      push(messagesRef, {
+        uid: currentUser.uid,
+        sender: currentUser.displayName || currentUser.email,
+        photo: currentUser.photoURL || '',
+        text: text,
+        timestamp: serverTimestamp()
+      });
+
+      input.value = '';
+    });
+
+    // Helper: Escape HTML to prevent XSS
+    function escapeHtml(unsafe) {
+      return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    // Toggle Mobile Sidebar
+    document.getElementById('btn-toggle-sidebar').addEventListener('click', () => {
+      const sidebar = document.getElementById('channel-sidebar');
+      sidebar.classList.toggle('hidden');
+    });
+
+    // API KEY CONFIG MODAL LOGIC
+    const configModal = document.getElementById('config-modal');
+    const configSelect = document.getElementById('config-server-select');
+    const configTextarea = document.getElementById('config-json-input');
+
+    function updateConfigTextarea() {
+      const srvIdx = parseInt(configSelect.value, 10);
+      configTextarea.value = JSON.stringify(SERVER_CONFIGS[srvIdx].config, null, 2);
+    }
+
+    document.getElementById('btn-show-config').addEventListener('click', () => {
+      updateConfigTextarea();
+      configModal.classList.remove('hidden');
+    });
+
+    document.getElementById('btn-close-config').addEventListener('click', () => {
+      configModal.classList.add('hidden');
+    });
+
+    configSelect.addEventListener('change', () => {
+      updateConfigTextarea();
+    });
+
+    document.getElementById('btn-save-config').addEventListener('click', async () => {
+      const srvIdx = parseInt(configSelect.value, 10);
+      try {
+        const parsedConfig = JSON.parse(configTextarea.value);
+        if (!parsedConfig.apiKey) {
+          throw new Error("Thiếu trường 'apiKey' trong JSON!");
+        }
+
+        SERVER_CONFIGS[srvIdx].config = parsedConfig;
+        
+        // Lưu cấu hình vào LocalStorage
+        const toSave = SERVER_CONFIGS.map(s => s.config);
+        localStorage.setItem('CUSTOM_FIREBASE_SERVERS', JSON.stringify(toSave));
+
+        showToast(`Đã lưu API Key cho ${SERVER_CONFIGS[srvIdx].name}!`, 'success');
+        configModal.classList.add('hidden');
+
+        // Khởi tạo lại kết nối nếu đang ở Server này
+        if (srvIdx === currentServerIndex) {
+          await connectToChatServer(srvIdx);
+        }
+      } catch (err) {
+        showToast("JSON không hợp lệ: " + err.message, "error");
+      }
+    });
+
+    document.getElementById('btn-reset-config').addEventListener('click', () => {
+      localStorage.removeItem('CUSTOM_FIREBASE_SERVERS');
+      showToast("Đã khôi phục cấu hình ban đầu!", "info");
+      setTimeout(() => location.reload(), 800);
+    });
+
+    // Initialize UI
+    renderServerListUI();
+
+  </script>
+</body>
+</html>
